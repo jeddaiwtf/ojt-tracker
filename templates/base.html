@@ -1,0 +1,249 @@
+{% load static ojt_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}OJT Tracker{% endblock %}</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --sidebar-width: 260px;
+      --primary: #2563eb;
+      --primary-light: #dbeafe;
+      --sidebar-bg: #0f172a;
+      --sidebar-text: #94a3b8;
+      --sidebar-active: #2563eb;
+      --card-shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+      --transition: .2s ease;
+    }
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #f1f5f9; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: var(--sidebar-width);
+      min-height: 100vh;
+      background: var(--sidebar-bg);
+      position: fixed; top: 0; left: 0; z-index: 1000;
+      transition: transform var(--transition);
+      display: flex; flex-direction: column;
+    }
+    #sidebar .brand {
+      padding: 1.5rem 1.25rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    #sidebar .brand h5 { color: #f8fafc; font-weight: 700; font-size: 1rem; margin: 0; }
+    #sidebar .brand small { color: var(--sidebar-text); font-size: .75rem; }
+    #sidebar .nav-section {
+      padding: .5rem 1rem .25rem;
+      font-size: .65rem; font-weight: 600; letter-spacing: .08em;
+      color: #475569; text-transform: uppercase;
+    }
+    #sidebar .nav-link {
+      color: var(--sidebar-text); padding: .55rem 1.25rem;
+      border-radius: .5rem; margin: .1rem .75rem;
+      font-size: .875rem; font-weight: 500;
+      display: flex; align-items: center; gap: .65rem;
+      transition: all var(--transition);
+    }
+    #sidebar .nav-link:hover { background: rgba(255,255,255,.06); color: #e2e8f0; }
+    #sidebar .nav-link.active { background: var(--sidebar-active); color: #fff; }
+    #sidebar .nav-link i { font-size: 1rem; width: 1.1rem; text-align: center; }
+    #sidebar .sidebar-footer {
+      margin-top: auto; padding: 1rem 1.25rem;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    /* ── Main content ── */
+    #main { margin-left: var(--sidebar-width); transition: margin var(--transition); }
+    .topbar {
+      background: #fff; border-bottom: 1px solid #e2e8f0;
+      padding: .75rem 1.5rem; display: flex; align-items: center;
+      justify-content: space-between; position: sticky; top: 0; z-index: 100;
+    }
+    .topbar .page-title { font-weight: 600; font-size: 1.05rem; color: #0f172a; margin: 0; }
+    .content-body { padding: 1.75rem; }
+
+    /* ── Cards ── */
+    .stat-card {
+      background: #fff; border-radius: 1rem; padding: 1.25rem 1.5rem;
+      box-shadow: var(--card-shadow); border: 1px solid #f1f5f9;
+    }
+    .stat-card .label { font-size: .75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .05em; }
+    .stat-card .value { font-size: 2rem; font-weight: 700; color: #0f172a; line-height: 1.1; }
+    .stat-card .sub { font-size: .8rem; color: #94a3b8; margin-top: .2rem; }
+    .stat-card .icon-wrap {
+      width: 48px; height: 48px; border-radius: .75rem;
+      display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+    }
+
+    /* ── Progress bar ── */
+    .progress { border-radius: 100px; background: #e2e8f0; }
+    .progress-bar { border-radius: 100px; transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+
+    /* ── Tables ── */
+    .table-card { background: #fff; border-radius: 1rem; box-shadow: var(--card-shadow); overflow: hidden; }
+    .table-card table { margin: 0; }
+    .table > :not(caption) > * > * { padding: .75rem 1rem; }
+    .table thead th { background: #f8fafc; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #64748b; border-bottom: 1px solid #e2e8f0; }
+
+    /* ── Badges ── */
+    .week-badge { font-size: .7rem; font-weight: 600; padding: .25rem .6rem; border-radius: 100px; }
+
+    /* ── Mobile ── */
+    @media (max-width: 768px) {
+      #sidebar { transform: translateX(-100%); }
+      #sidebar.show { transform: translateX(0); }
+      #main { margin-left: 0; }
+      .content-body { padding: 1rem; }
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeInUp .4s ease forwards; }
+    .fade-up:nth-child(2) { animation-delay: .05s; }
+    .fade-up:nth-child(3) { animation-delay: .1s; }
+    .fade-up:nth-child(4) { animation-delay: .15s; }
+
+    /* ── Alerts ── */
+    .alert { border-radius: .75rem; border: none; font-size: .875rem; }
+
+    /* ── Print overrides ── */
+    @media print {
+      #sidebar, .topbar, .no-print { display: none !important; }
+      #main { margin-left: 0 !important; }
+      body { background: #fff; }
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<!-- ═══ SIDEBAR ═══ -->
+<nav id="sidebar">
+  <div class="brand">
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <div style="width:32px;height:32px;background:var(--primary);border-radius:.5rem;display:flex;align-items:center;justify-content:center;">
+        <i class="bi bi-mortarboard-fill text-white" style="font-size:.9rem;"></i>
+      </div>
+      <h5>OJT Tracker</h5>
+    </div>
+    <small>{% if user.profile %}{{ user.profile.department }}{% else %}Setup Required{% endif %}</small>
+  </div>
+
+  <div class="mt-2">
+    <div class="nav-section">Main</div>
+    <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+      <i class="bi bi-grid-1x2-fill"></i> Dashboard
+    </a>
+    <a href="{% url 'log_list' %}" class="nav-link {% if 'log' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-calendar-check-fill"></i> Daily Logs
+    </a>
+    <a href="{% url 'weekly_list' %}" class="nav-link {% if 'weekly' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-journal-text"></i> Weekly Summary
+    </a>
+    <a href="{% url 'completion_report' %}" class="nav-link {% if request.resolver_match.url_name == 'completion_report' %}active{% endif %}">
+      <i class="bi bi-file-earmark-text-fill"></i> OJT Report
+    </a>
+
+    <div class="nav-section mt-2">Account</div>
+    <a href="{% url 'profile_edit' %}" class="nav-link {% if 'profile' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-person-fill"></i> My Profile
+    </a>
+    {% if user.is_staff %}
+    <a href="{% url 'admin:index' %}" class="nav-link">
+      <i class="bi bi-shield-lock-fill"></i> Admin Panel
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;">
+        <span style="color:#fff;font-weight:700;font-size:.85rem;">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+      </div>
+      <div>
+        <div style="color:#e2e8f0;font-size:.8rem;font-weight:600;">{{ user.get_full_name|default:user.username }}</div>
+        <div style="color:#475569;font-size:.7rem;">Student</div>
+      </div>
+    </div>
+    <a href="{% url 'logout' %}" class="nav-link" style="margin:0;padding:.5rem .75rem;"
+       onclick="return confirm('Are you sure you want to sign out?')">
+      <i class="bi bi-box-arrow-left"></i> Sign Out
+    </a>
+  </div>
+</nav>
+
+<!-- ═══ MAIN ═══ -->
+<div id="main">
+  <div class="topbar">
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn btn-sm d-md-none" onclick="toggleSidebar()">
+        <i class="bi bi-list fs-5"></i>
+      </button>
+      <h6 class="page-title">{% block page_title %}Dashboard{% endblock %}</h6>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      {% if user.profile %}
+        <span class="badge bg-primary-subtle text-primary fw-semibold" style="font-size:.75rem;">
+          <i class="bi bi-clock me-1"></i>{{ user.profile.completion_percentage }}% Complete
+        </span>
+      {% endif %}
+      <a href="{% url 'log_add' %}" class="btn btn-primary btn-sm no-print">
+        <i class="bi bi-plus-lg me-1"></i>Log Today
+      </a>
+    </div>
+  </div>
+
+  <div class="content-body">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+{% else %}
+<!-- Unauthenticated layout -->
+<div class="min-vh-100 d-flex align-items-center justify-content-center" style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);">
+  <div style="width:100%;max-width:440px;padding:1rem;">
+    {% block auth_content %}{% endblock %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('show');
+  }
+  // Auto-dismiss alerts after 4s
+  setTimeout(() => {
+    document.querySelectorAll('.alert').forEach(a => {
+      const bsAlert = bootstrap.Alert.getOrCreateInstance(a);
+      bsAlert.close();
+    });
+  }, 4000);
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

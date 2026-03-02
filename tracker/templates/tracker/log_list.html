@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load ojt_filters %}
+{% block title %}Daily Logs — OJT Tracker{% endblock %}
+{% block page_title %}Daily Logs{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div>
+    <h5 class="fw-bold mb-0">Daily Log Entries</h5>
+    <p class="text-muted small mb-0">Total: <strong>{{ profile.total_hours_rendered }}h</strong> rendered across <strong>{{ logs.count }}</strong> days</p>
+  </div>
+  <div class="d-flex gap-2 no-print">
+    <a href="{% url 'export_csv' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-download me-1"></i>Export CSV
+    </a>
+    <a href="{% url 'log_add' %}" class="btn btn-primary btn-sm fw-semibold">
+      <i class="bi bi-plus-lg me-1"></i>Add Log
+    </a>
+  </div>
+</div>
+
+<div class="table-card">
+  <table class="table table-hover align-middle mb-0">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Week #</th>
+        <th>Time In</th>
+        <th>Time Out</th>
+        <th>Hours</th>
+        <th>Remarks</th>
+        <th class="no-print">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td class="fw-semibold small">{{ log.date|date:"M d, Y" }}</td>
+        <td><span class="badge bg-primary-subtle text-primary week-badge">Week {{ log.week_number }}</span></td>
+        <td class="small">{{ log.time_in|time:"h:i A" }}</td>
+        <td class="small">{{ log.time_out|time:"h:i A" }}</td>
+        <td>
+          <span class="badge {% if log.daily_hours >= 8 %}bg-success{% elif log.daily_hours >= 4 %}bg-info{% else %}bg-warning text-dark{% endif %} rounded-pill">
+            {{ log.daily_hours }}h
+          </span>
+        </td>
+        <td class="small text-muted" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          {{ log.remarks|default:"—" }}
+        </td>
+        <td class="no-print">
+          <a href="{% url 'log_edit' log.pk %}" class="btn btn-sm btn-outline-secondary me-1">
+            <i class="bi bi-pencil"></i>
+          </a>
+          <button class="btn btn-sm btn-outline-danger"
+                  onclick="confirmDelete('{% url 'log_delete' log.pk %}', '{{ log.date|date:'M d, Y' }}')">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="text-center py-5">
+          <i class="bi bi-calendar-x text-muted fs-1 d-block mb-2"></i>
+          <p class="text-muted mb-2">No logs yet. Start tracking your OJT hours!</p>
+          <a href="{% url 'log_add' %}" class="btn btn-primary btn-sm">Add First Log</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    {% if logs %}
+    <tfoot>
+      <tr class="table-active">
+        <th colspan="4">Total Hours</th>
+        <th class="text-success fw-bold">{{ profile.total_hours_rendered }}h</th>
+        <th colspan="2"></th>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content border-0 shadow" style="border-radius:1rem;">
+      <div class="modal-body p-4 text-center">
+        <i class="bi bi-exclamation-triangle text-danger fs-1 mb-2 d-block"></i>
+        <p class="fw-semibold mb-1">Delete this log?</p>
+        <p class="small text-muted mb-3" id="deleteDate"></p>
+        <form id="deleteForm" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-sm px-4 me-2">Delete</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal">Cancel</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(url, dateStr) {
+  document.getElementById('deleteForm').action = url;
+  document.getElementById('deleteDate').textContent = dateStr;
+  new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

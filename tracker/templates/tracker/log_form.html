@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}{{ title }} — OJT Tracker{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-5">
+    <div class="card border-0 shadow-sm" style="border-radius:1rem;">
+      <div class="card-body p-4">
+        <div class="mb-4">
+          <h5 class="fw-bold mb-1">{{ title }}</h5>
+          <div class="alert alert-info small py-2 mb-0" style="border-radius:.6rem;">
+            <i class="bi bi-info-circle me-1"></i>
+            <strong>1-hour lunch break</strong> is automatically deducted from your total hours.
+          </div>
+        </div>
+
+        <form method="post" id="logForm">
+          {% csrf_token %}
+          {% crispy form %}
+        </form>
+
+        <!-- Live preview -->
+        <div id="hoursPreview" class="mt-3 p-3 rounded" style="background:#f0f9ff;border:1px solid #bae6fd;display:none;">
+          <div class="small fw-semibold text-primary">
+            <i class="bi bi-calculator me-1"></i>
+            Estimated daily hours: <span id="previewHours" class="fs-5 fw-bold">0.00</span>h
+          </div>
+          <div class="text-muted" style="font-size:.72rem;margin-top:.2rem;">
+            (Time Out − Time In) − 1hr lunch deduction
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <a href="{% url 'log_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Back to Logs
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function computeHours() {
+  const timeIn = document.getElementById('id_time_in')?.value;
+  const timeOut = document.getElementById('id_time_out')?.value;
+  const preview = document.getElementById('hoursPreview');
+  const previewHours = document.getElementById('previewHours');
+
+  if (timeIn && timeOut) {
+    const [inH, inM] = timeIn.split(':').map(Number);
+    const [outH, outM] = timeOut.split(':').map(Number);
+    const inTotal = inH * 60 + inM;
+    const outTotal = outH * 60 + outM;
+    const diffMins = outTotal - inTotal;
+
+    if (diffMins > 0) {
+      const hours = Math.max((diffMins / 60) - 1, 0);
+      previewHours.textContent = hours.toFixed(2);
+      preview.style.display = 'block';
+      previewHours.style.color = hours > 0 ? '#2563eb' : '#dc2626';
+    } else {
+      preview.style.display = 'none';
+    }
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+document.getElementById('id_time_in')?.addEventListener('change', computeHours);
+document.getElementById('id_time_out')?.addEventListener('change', computeHours);
+</script>
+{% endblock %}

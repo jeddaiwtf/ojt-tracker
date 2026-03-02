@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% load ojt_filters %}
+{% block title %}Dashboard — OJT Tracker{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+  .stat-icon-blue { background: #dbeafe; color: #2563eb; }
+  .stat-icon-green { background: #dcfce7; color: #16a34a; }
+  .stat-icon-orange { background: #fef9c3; color: #ca8a04; }
+  .stat-icon-red { background: #fee2e2; color: #dc2626; }
+  .chart-container { position: relative; height: 260px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── Welcome Banner ── -->
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+  <div>
+    <h5 class="fw-bold mb-0">Good day, {{ user.first_name|default:user.username }}! 👋</h5>
+    <p class="text-muted small mb-0">
+      {{ profile.department }} &nbsp;·&nbsp; Supervisor: {{ profile.supervisor }}
+      &nbsp;·&nbsp; Started: {{ profile.ojt_start_date|date:"M d, Y" }}
+    </p>
+  </div>
+  <div class="no-print">
+    <a href="{% url 'log_add' %}" class="btn btn-primary fw-semibold">
+      <i class="bi bi-plus-lg me-1"></i>Log Today
+    </a>
+  </div>
+</div>
+
+<!-- ── Stat Cards ── -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3 fade-up">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div class="label">Required</div>
+        <div class="icon-wrap stat-icon-blue"><i class="bi bi-bullseye"></i></div>
+      </div>
+      <div class="value">{{ total_required|floatformat:0 }}</div>
+      <div class="sub">Total required hours</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3 fade-up">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div class="label">Rendered</div>
+        <div class="icon-wrap stat-icon-green"><i class="bi bi-check-circle-fill"></i></div>
+      </div>
+      <div class="value text-success">{{ total_rendered|floatformat:2 }}</div>
+      <div class="sub">Hours completed</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3 fade-up">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div class="label">Remaining</div>
+        <div class="icon-wrap stat-icon-orange"><i class="bi bi-hourglass-split"></i></div>
+      </div>
+      <div class="value text-warning">{{ remaining|floatformat:2 }}</div>
+      <div class="sub">Hours left to complete</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3 fade-up">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div class="label">Progress</div>
+        <div class="icon-wrap stat-icon-{% if completion_pct >= 100 %}green{% elif completion_pct >= 50 %}blue{% else %}red{% endif %}">
+          <i class="bi bi-graph-up-arrow"></i>
+        </div>
+      </div>
+      <div class="value text-primary">{{ completion_pct }}%</div>
+      <div class="sub">Overall completion</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Progress Bar ── -->
+<div class="stat-card mb-4 fade-up">
+  <div class="d-flex justify-content-between mb-2">
+    <span class="fw-semibold small">OJT Completion Progress</span>
+    <span class="fw-bold small text-primary">{{ completion_pct }}%</span>
+  </div>
+  <div class="progress" style="height:14px;">
+    <div
+      class="progress-bar bg-{{ completion_pct|percentage_color }}"
+      role="progressbar"
+      style="width: 0%"
+      data-target="{{ completion_pct }}"
+      aria-valuenow="{{ completion_pct }}"
+      aria-valuemin="0" aria-valuemax="100">
+    </div>
+  </div>
+  <div class="d-flex justify-content-between mt-1">
+    <small class="text-muted">0h</small>
+    <small class="text-muted">{{ total_rendered|floatformat:1 }}h / {{ total_required|floatformat:0 }}h</small>
+    <small class="text-muted">{{ total_required|floatformat:0 }}h</small>
+  </div>
+  {% if completion_pct >= 100 %}
+  <div class="alert alert-success mt-3 mb-0 py-2 small fw-semibold">
+    🎉 Congratulations! You have completed your OJT requirement!
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Chart + Recent Logs ── -->
+<div class="row g-3">
+  <div class="col-md-7 fade-up">
+    <div class="stat-card h-100">
+      <div class="fw-semibold small mb-3">Weekly Hours Breakdown</div>
+      <div class="chart-container">
+        <canvas id="weeklyChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-5 fade-up">
+    <div class="table-card h-100">
+      <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-semibold small">Recent Logs</span>
+        <a href="{% url 'log_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Wk</th>
+            <th>Hours</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in recent_logs %}
+          <tr>
+            <td class="small">{{ log.date|date:"M d" }}</td>
+            <td><span class="badge bg-primary-subtle text-primary week-badge">W{{ log.week_number }}</span></td>
+            <td class="fw-semibold small">{{ log.daily_hours }}h</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="text-muted text-center small py-4">No logs yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// ── Animate progress bar ──
+window.addEventListener('load', () => {
+  const bar = document.querySelector('.progress-bar[data-target]');
+  if (bar) {
+    const target = parseFloat(bar.dataset.target);
+    setTimeout(() => { bar.style.width = Math.min(target, 100) + '%'; }, 200);
+  }
+});
+
+// ── Weekly Chart ──
+const labels = {{ chart_labels|safe }};
+const data = {{ chart_data|safe }};
+
+const ctx = document.getElementById('weeklyChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Hours',
+      data,
+      backgroundColor: 'rgba(37,99,235,0.85)',
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.parsed.y.toFixed(2)}h`
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: '#f1f5f9' },
+        ticks: { callback: v => v + 'h', font: { size: 11 } }
+      },
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 11 } }
+      }
+    }
+  }
+});
+</script>
+{% endblock %}

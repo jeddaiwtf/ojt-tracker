@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load ojt_filters %}
+{% block title %}Weekly Summary — OJT Tracker{% endblock %}
+{% block page_title %}Weekly Summary{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+  <h5 class="fw-bold mb-0">Weekly Summary</h5>
+  <p class="text-muted small mb-0">Track your progress and document learnings week by week.</p>
+</div>
+
+{% if weeks %}
+<div class="row g-3">
+  {% for week in weeks %}
+  <div class="col-md-6 col-lg-4">
+    <div class="stat-card h-100 d-flex flex-column">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="badge bg-primary text-white fw-bold px-3 py-2" style="border-radius:.6rem;font-size:.85rem;">
+          Week {{ week.week_number }}
+        </span>
+        <span class="fw-bold text-success">{{ week.total_hours|floatformat:2 }}h</span>
+      </div>
+
+      {% if week.summary.weekly_learnings %}
+      <div class="mb-2">
+        <div class="small text-muted fw-semibold mb-1"><i class="bi bi-lightbulb me-1 text-warning"></i>Learnings</div>
+        <p class="small mb-0" style="line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">
+          {{ week.summary.weekly_learnings }}
+        </p>
+      </div>
+      {% endif %}
+
+      {% if week.summary.major_tasks %}
+      <div class="mb-2">
+        <div class="small text-muted fw-semibold mb-1"><i class="bi bi-check2-square me-1 text-success"></i>Tasks</div>
+        <p class="small mb-0" style="line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+          {{ week.summary.major_tasks }}
+        </p>
+      </div>
+      {% endif %}
+
+      {% if not week.summary.weekly_learnings and not week.summary.major_tasks %}
+      <p class="text-muted small italic mb-2">No notes added yet.</p>
+      {% endif %}
+
+      <div class="mt-auto pt-2">
+        <a href="{% url 'weekly_edit' week.week_number %}" class="btn btn-outline-primary btn-sm w-100">
+          <i class="bi bi-pencil me-1"></i>
+          {% if week.summary.weekly_learnings or week.summary.major_tasks %}Edit Notes{% else %}Add Notes{% endif %}
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+  <i class="bi bi-journal-x text-muted fs-1 d-block mb-2"></i>
+  <p class="text-muted mb-2">No weekly data yet. Add some daily logs first!</p>
+  <a href="{% url 'log_add' %}" class="btn btn-primary btn-sm">Add Daily Log</a>
+</div>
+{% endif %}
+{% endblock %}

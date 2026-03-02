@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block auth_content %}
+<div class="card border-0 shadow-lg" style="border-radius:1.25rem;overflow:hidden;">
+  <div class="card-body p-4">
+    <div class="text-center mb-4">
+      <div style="width:56px;height:56px;background:#2563eb;border-radius:1rem;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+        <i class="bi bi-mortarboard-fill text-white fs-3"></i>
+      </div>
+      <h4 class="fw-bold">OJT Tracker</h4>
+      <p class="text-muted small mb-0">Sign in to your account</p>
+    </div>
+
+    {% if form.errors %}
+    <div class="alert alert-danger small py-2">Invalid username or password.</div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Username</label>
+        <input type="text" name="username" class="form-control form-control-lg"
+               placeholder="Enter username" autofocus required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Password</label>
+        <input type="password" name="password" class="form-control form-control-lg"
+               placeholder="Enter password" required>
+      </div>
+      <input type="hidden" name="next" value="{{ next }}">
+      <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+      </button>
+    </form>
+
+    <hr class="my-3">
+
+    <div class="text-center">
+      <p class="text-muted small mb-2">Don't have an account yet?</p>
+      <a href="{% url 'register' %}" class="btn btn-outline-primary w-100 fw-semibold">
+        <i class="bi bi-person-plus me-2"></i>Create New Account
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

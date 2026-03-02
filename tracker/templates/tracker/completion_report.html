@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load ojt_filters %}
+{% block title %}OJT Completion Report — {{ user.get_full_name }}{% endblock %}
+{% block page_title %}OJT Completion Report{% endblock %}
+
+{% block extra_css %}
+<style>
+  @media print {
+    .no-print { display: none !important; }
+    .print-break { page-break-after: always; }
+    .report-card { box-shadow: none !important; border: 1px solid #dee2e6 !important; }
+    body { font-size: 12pt; }
+  }
+  .report-card { background: #fff; border-radius: 1rem; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .sig-line { border-top: 2px solid #0f172a; width: 220px; margin-top: 2.5rem; }
+  .report-header { background: linear-gradient(135deg, #0f172a, #1e3a5f); color: #fff; padding: 2rem; border-radius: 1rem; margin-bottom: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Action buttons (no-print) -->
+<div class="d-flex gap-2 mb-4 no-print">
+  <button onclick="window.print()" class="btn btn-primary fw-semibold">
+    <i class="bi bi-printer me-2"></i>Print / Save PDF
+  </button>
+  <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+  </a>
+</div>
+
+<!-- ── Report Header ── -->
+<div class="report-header">
+  <div class="row align-items-center">
+    <div class="col">
+      <div class="small opacity-75 mb-1 text-uppercase fw-semibold" style="letter-spacing:.08em;">On-the-Job Training</div>
+      <h3 class="fw-bold mb-1">OJT Completion Report</h3>
+      <div class="opacity-75 small">Generated: {{ today|date:"F d, Y" }}</div>
+    </div>
+    <div class="col-auto">
+      <div style="width:64px;height:64px;border-radius:1rem;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;">
+        <i class="bi bi-award-fill fs-1 text-white opacity-75"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Student Info ── -->
+<div class="report-card mb-4">
+  <h6 class="fw-bold text-uppercase small mb-3" style="letter-spacing:.08em;color:#64748b;">
+    <i class="bi bi-person-badge me-2"></i>Student Information
+  </h6>
+  <div class="row">
+    <div class="col-md-6">
+      <table class="table table-sm table-borderless mb-0">
+        <tr><th class="ps-0 text-muted small fw-semibold" style="width:130px;">Full Name</th><td class="fw-bold">{{ user.get_full_name }}</td></tr>
+        <tr><th class="ps-0 text-muted small fw-semibold">Username</th><td>{{ user.username }}</td></tr>
+        <tr><th class="ps-0 text-muted small fw-semibold">Email</th><td>{{ user.email|default:"—" }}</td></tr>
+        <tr><th class="ps-0 text-muted small fw-semibold">Department</th><td class="fw-semibold">{{ profile.department }}</td></tr>
+      </table>
+    </div>
+    <div class="col-md-6">
+      <table class="table table-sm table-borderless mb-0">
+        <tr><th class="ps-0 text-muted small fw-semibold" style="width:130px;">Supervisor</th><td class="fw-bold">{{ profile.supervisor }}</td></tr>
+        <tr><th class="ps-0 text-muted small fw-semibold">OJT Start Date</th><td>{{ profile.ojt_start_date|date:"F d, Y" }}</td></tr>
+        <tr><th class="ps-0 text-muted small fw-semibold">Required Hours</th><td class="fw-bold">{{ total_required }} hours</td></tr>
+        <tr><th class="ps-0 text-muted small fw-semibold">Status</th>
+          <td>
+            {% if completion_pct >= 100 %}
+              <span class="badge bg-success">✅ COMPLETED</span>
+            {% else %}
+              <span class="badge bg-warning text-dark">IN PROGRESS</span>
+            {% endif %}
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── Hours Summary ── -->
+<div class="report-card mb-4">
+  <h6 class="fw-bold text-uppercase small mb-3" style="letter-spacing:.08em;color:#64748b;">
+    <i class="bi bi-clock-history me-2"></i>Hours Summary
+  </h6>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="p-3 rounded text-center" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+        <div class="fs-3 fw-bold text-success">{{ total_rendered|floatformat:2 }}</div>
+        <div class="small text-muted fw-semibold">Hours Rendered</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p-3 rounded text-center" style="background:#fefce8;border:1px solid #fde68a;">
+        <div class="fs-3 fw-bold text-warning">{{ remaining|floatformat:2 }}</div>
+        <div class="small text-muted fw-semibold">Remaining Hours</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p-3 rounded text-center" style="background:#eff6ff;border:1px solid #bfdbfe;">
+        <div class="fs-3 fw-bold text-primary">{{ completion_pct }}%</div>
+        <div class="small text-muted fw-semibold">Completion Rate</div>
+      </div>
+    </div>
+  </div>
+  <div class="mt-3">
+    <div class="progress" style="height:10px;">
+      <div class="progress-bar bg-{{ completion_pct|percentage_color }}" style="width:{{ completion_pct }}%"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Weekly Breakdown ── -->
+<div class="report-card mb-4">
+  <h6 class="fw-bold text-uppercase small mb-3" style="letter-spacing:.08em;color:#64748b;">
+    <i class="bi bi-table me-2"></i>Weekly Hours Breakdown
+  </h6>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr>
+        <th>Week #</th>
+        <th>Hours</th>
+        <th>Learnings Summary</th>
+        <th>Major Tasks</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for wh in weekly_hours %}
+      <tr>
+        <td class="text-center fw-bold"><span class="badge bg-primary">Week {{ wh.week_number }}</span></td>
+        <td class="fw-bold text-center">{{ wh.total|floatformat:2 }}h</td>
+        <td class="small">
+          {% for s in weekly_summaries %}
+            {% if s.week_number == wh.week_number %}{{ s.weekly_learnings|default:"—" }}{% endif %}
+          {% endfor %}
+        </td>
+        <td class="small">
+          {% for s in weekly_summaries %}
+            {% if s.week_number == wh.week_number %}{{ s.major_tasks|default:"—" }}{% endif %}
+          {% endfor %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="text-muted text-center small">No data yet.</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot class="table-active fw-bold">
+      <tr>
+        <th>Total</th>
+        <th class="text-success">{{ total_rendered|floatformat:2 }}h</th>
+        <th colspan="2"></th>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- ── Signature Block ── -->
+<div class="report-card">
+  <h6 class="fw-bold text-uppercase small mb-4" style="letter-spacing:.08em;color:#64748b;">
+    <i class="bi bi-pen me-2"></i>Certification
+  </h6>
+  <p class="small mb-4" style="line-height:1.8;">
+    I hereby certify that <strong>{{ user.get_full_name }}</strong> has completed
+    <strong>{{ total_rendered|floatformat:2 }} out of {{ total_required }} required hours</strong>
+    of On-the-Job Training in the <strong>{{ profile.department }}</strong> department,
+    under my direct supervision.
+  </p>
+  <div class="row mt-2">
+    <div class="col-md-5 col-6">
+      <div class="sig-line"></div>
+      <div class="fw-semibold mt-1">{{ profile.supervisor }}</div>
+      <div class="small text-muted">Supervisor / OJT Coordinator</div>
+      <div class="small text-muted">Date: _______________________</div>
+    </div>
+    <div class="col-md-5 col-6 offset-md-2">
+      <div class="sig-line"></div>
+      <div class="fw-semibold mt-1">{{ user.get_full_name }}</div>
+      <div class="small text-muted">OJT Student</div>
+      <div class="small text-muted">Date: _______________________</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

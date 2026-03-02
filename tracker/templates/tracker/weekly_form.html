@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Week {{ week_number }} Notes — OJT Tracker{% endblock %}
+{% block page_title %}Week {{ week_number }} Notes{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-md-7">
+    <div class="card border-0 shadow-sm" style="border-radius:1rem;">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-1">Week {{ week_number }} — Notes</h5>
+        <p class="text-muted small mb-4">Total hours this week: <strong class="text-success">{{ total_hours|floatformat:2 }}h</strong></p>
+        <form method="post">
+          {% csrf_token %}
+          {% crispy form %}
+        </form>
+        <a href="{% url 'weekly_list' %}" class="btn btn-outline-secondary btn-sm mt-2">
+          <i class="bi bi-arrow-left me-1"></i>Back to Weekly Summary
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="table-card">
+      <div class="p-3 border-bottom">
+        <span class="fw-semibold small">Logs — Week {{ week_number }}</span>
+      </div>
+      <table class="table table-hover mb-0">
+        <thead><tr><th>Date</th><th>In</th><th>Out</th><th>Hours</th></tr></thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td class="small">{{ log.date|date:"M d" }}</td>
+            <td class="small">{{ log.time_in|time:"h:i A" }}</td>
+            <td class="small">{{ log.time_out|time:"h:i A" }}</td>
+            <td class="small fw-semibold">{{ log.daily_hours }}h</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-muted text-center small py-3">No logs.</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if logs %}
+        <tfoot>
+          <tr class="table-active">
+            <th colspan="3">Total</th>
+            <th class="text-success fw-bold">{{ total_hours|floatformat:2 }}h</th>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
